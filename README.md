@@ -2,6 +2,8 @@
 [![Actions Status](https://github.com/titanmen1/devops-engineer-from-scratch-project-315/actions/workflows/hexlet-check.yml/badge.svg)](https://github.com/titanmen1/devops-engineer-from-scratch-project-315/actions)
 # Project DevOps Deploy
 
+[![CI](https://github.com/titanmen1/project-devops-deploy/actions/workflows/ci.yml/badge.svg)](https://github.com/titanmen1/project-devops-deploy/actions/workflows/ci.yml)
+
 Bulletin board service.
 
 > **Fork policy**: this upstream repository is read-only. We do not review or merge pull requests and we do not accept infrastructure changes (Dockerfiles, Ansible roles, CI/CD workflows, etc.). To experiment or extend the project, fork it and work inside your own repository.
