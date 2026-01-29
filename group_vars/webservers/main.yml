@@ -4,6 +4,12 @@ deploy_container_name: bulletins
 
 deploy_run_args: "--network bulletins-net"
 
+postgres_network_name: bulletins-net
+postgres_image: postgres:16-alpine
+postgres_container_name: bulletins-postgres
+postgres_data_dir: /opt/bulletins/data/postgres
+postgres_db_name: bulletins
+
 deploy_host_dirs:
   - /opt/bulletins/data/bulletin-images
   - /opt/bulletins/logs
@@ -25,6 +31,24 @@ nginx_backend_port: 8080
 nginx_management_port: 9090
 nginx_serve_static: true
 nginx_static_root: "/opt/bulletins/static"
+
+certbot_create_if_missing: true
+certbot_admin_email: "admin@{{ nginx_server_name }}"
+certbot_certs:
+  - domains:
+      - "{{ nginx_server_name }}"
+    webroot: "{{ certbot_webroot }}"
+certbot_create_standalone_stop_services: []
+certbot_create_method: webroot
+certbot_webroot: "/var/www/certbot"
+certbot_auto_renew: true
+certbot_auto_renew_user: root
+certbot_auto_renew_options: "--quiet --deploy-hook 'systemctl reload nginx'"
+
+nginx_enable_https: true
+nginx_ssl_certificate: "/etc/letsencrypt/live/{{ nginx_server_name }}/fullchain.pem"
+nginx_ssl_certificate_key: "/etc/letsencrypt/live/{{ nginx_server_name }}/privkey.pem"
+nginx_acme_webroot: "{{ certbot_webroot }}"
 
 deploy_env:
   SPRING_PROFILES_ACTIVE: "prod"
