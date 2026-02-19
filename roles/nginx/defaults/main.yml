@@ -1,0 +1,16 @@
+---
+nginx_server_name: "_"
+nginx_listen_port: 80
+
+nginx_enable_https: false
+nginx_ssl_certificate: ""
+nginx_ssl_certificate_key: ""
+nginx_acme_webroot: "/var/www/certbot"
+
+nginx_backend_host: "127.0.0.1"
+nginx_backend_port: 8080
+nginx_management_port: 9090
+
+nginx_serve_static: true
+nginx_static_root: "/opt/bulletins/static"
+nginx_static_index: "index.html"

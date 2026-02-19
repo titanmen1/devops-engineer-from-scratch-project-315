@@ -2,3 +2,6 @@
 roles:
   - name: geerlingguy.docker
   - name: geerlingguy.certbot
+
+collections:
+  - name: community.docker

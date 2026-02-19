@@ -1,0 +1,9 @@
+---
+postgres_network_name: "bulletins-net"
+postgres_image: "postgres:16-alpine"
+postgres_container_name: "bulletins-postgres"
+postgres_data_dir: "/opt/bulletins/data/postgres"
+postgres_db_name: "bulletins"
+postgres_user: "postgres"
+postgres_password: "postgres"
+postgres_restart_policy: "always"

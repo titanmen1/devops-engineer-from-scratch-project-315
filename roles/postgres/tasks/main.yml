@@ -1,0 +1,32 @@
+---
+- name: Ensure postgres network exists
+  community.docker.docker_network:
+    name: "{{ postgres_network_name }}"
+    state: present
+
+- name: Ensure postgres data directory exists
+  ansible.builtin.file:
+    path: "{{ postgres_data_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Pull postgres image
+  community.docker.docker_image:
+    name: "{{ postgres_image }}"
+    source: pull
+
+- name: Run postgres container
+  community.docker.docker_container:
+    name: "{{ postgres_container_name }}"
+    image: "{{ postgres_image }}"
+    state: started
+    restart_policy: "{{ postgres_restart_policy }}"
+    recreate: true
+    env:
+      POSTGRES_DB: "{{ postgres_db_name }}"
+      POSTGRES_USER: "{{ postgres_user }}"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+    volumes:
+      - "{{ postgres_data_dir }}:/var/lib/postgresql/data"
+    networks:
+      - name: "{{ postgres_network_name }}"

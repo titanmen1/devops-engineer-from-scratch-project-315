@@ -4,7 +4,7 @@ deploy_container_name: hello_world
 
 deploy_detach: true
 deploy_restart_policy: unless-stopped
-deploy_run_args: ""
+deploy_networks: []
 
 deploy_ports: []
 deploy_env: {}

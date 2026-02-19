@@ -1,0 +1,46 @@
+---
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+  when: ansible_facts.os_family == "Debian"
+
+- name: Ensure nginx is enabled and started
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Ensure ACME webroot directory exists
+  ansible.builtin.file:
+    path: "{{ nginx_acme_webroot }}"
+    state: directory
+    mode: "0755"
+
+- name: Ensure static root directory exists
+  ansible.builtin.file:
+    path: "{{ nginx_static_root }}"
+    state: directory
+    mode: "0755"
+  when: nginx_serve_static | bool
+
+- name: Remove default nginx site config (if exists)
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload nginx
+
+- name: Deploy nginx site config
+  ansible.builtin.template:
+    src: bulletins.conf.j2
+    dest: /etc/nginx/sites-available/bulletins.conf
+    mode: "0644"
+  notify: Reload nginx
+
+- name: Enable nginx site config
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/bulletins.conf
+    dest: /etc/nginx/sites-enabled/bulletins.conf
+    state: link
+  notify: Reload nginx

@@ -1,13 +1,9 @@
 ---
 - name: Docker login to registry
-  ansible.builtin.command: >-
-    docker login {{ deploy_registry }}
-    -u {{ deploy_registry_username }}
-    --password-stdin
-  args:
-    stdin: "{{ deploy_registry_password }}"
-  register: docker_login
-  changed_when: "'Login Succeeded' in docker_login.stdout"
+  community.docker.docker_login:
+    registry_url: "{{ deploy_registry }}"
+    username: "{{ deploy_registry_username }}"
+    password: "{{ deploy_registry_password }}"
   when:
     - deploy_registry | length > 0
     - deploy_registry_username | length > 0
@@ -28,9 +24,9 @@
   loop: "{{ deploy_host_dirs | default([]) }}"
 
 - name: Pull docker image
-  ansible.builtin.command: docker pull {{ deploy_image }}
-  register: docker_pull
-  changed_when: "'Downloaded newer image' in docker_pull.stdout or 'Downloaded newer image' in docker_pull.stderr"
+  community.docker.docker_image:
+    name: "{{ deploy_image }}"
+    source: pull
 
 - name: Ensure static destination directory exists
   ansible.builtin.file:
@@ -39,107 +35,53 @@
     mode: "0755"
   when: deploy_extract_static | bool
 
-- name: Remove existing temp container if exists
-  ansible.builtin.command: docker rm -f {{ deploy_container_name }}_static
-  register: remove_existing_container
-  failed_when: false
-  changed_when: remove_existing_container.rc == 0
+- name: Extract static assets from image
+  community.docker.docker_container:
+    name: "{{ deploy_container_name }}_static"
+    image: "{{ deploy_image }}"
+    command: "sh -c 'cp -r {{ deploy_static_src_path }}/. /output'"
+    volumes:
+      - "{{ deploy_static_dest }}:/output"
+    auto_remove: true
+    detach: false
+    state: started
   when: deploy_extract_static | bool
 
-- name: Create temp container for static extraction
-  ansible.builtin.command: docker create --name {{ deploy_container_name }}_static {{ deploy_image }}
-  register: docker_static_create
-  changed_when: true
-  when: deploy_extract_static | bool
-
-- name: Copy static assets from image to host
-  ansible.builtin.command: docker cp {{ deploy_container_name }}_static:{{ deploy_static_src_path }}/. {{ deploy_static_dest }}/
-  register: docker_static_copy
-  changed_when: true
-  when: deploy_extract_static | bool
-
-- name: Remove temp container for static extraction
-  ansible.builtin.command: docker rm -f {{ deploy_container_name }}_static
-  register: docker_static_rm
-  failed_when: false
-  changed_when: docker_static_rm.rc == 0
-  when: deploy_extract_static | bool
-
-
-- name: Resolve pulled image id
-  ansible.builtin.command: docker image inspect {{ deploy_image }} --format {{'{{'}}.Id{{'}}'}}
-  register: docker_image_id
-  changed_when: false
+- name: Resolve pulled image info
+  community.docker.docker_image_info:
+    name: "{{ deploy_image }}"
+  register: docker_image_info
 
 - name: Check if container exists
-  ansible.builtin.command: docker inspect {{ deploy_container_name }}
-  register: docker_inspect
-  failed_when: false
-  changed_when: false
-
-- name: Get current container image id
-  ansible.builtin.command: docker inspect {{ deploy_container_name }} --format {{'{{'}}.Image{{'}}'}}
-  register: docker_current_container_image_id
-  failed_when: false
-  changed_when: false
-  when:
-    - deploy_track_releases | bool
-    - docker_inspect.rc == 0
+  community.docker.docker_container_info:
+    name: "{{ deploy_container_name }}"
+  register: docker_container_info
 
 - name: Save previous image id
   ansible.builtin.copy:
     dest: "{{ deploy_release_dir }}/previous_image"
-    content: "{{ docker_current_container_image_id.stdout }}\n"
+    content: "{{ docker_container_info.container.Image }}\n"
     mode: "0644"
   when:
     - deploy_track_releases | bool
-    - docker_inspect.rc == 0
+    - docker_container_info.exists
 
 - name: Save current image id
   ansible.builtin.copy:
     dest: "{{ deploy_release_dir }}/current_image"
-    content: "{{ docker_image_id.stdout }}\n"
+    content: "{{ docker_image_info.images[0].Id }}\n"
     mode: "0644"
   when: deploy_track_releases | bool
 
-- name: Build docker run args
-  ansible.builtin.set_fact:
-    deploy_ports_args: >-
-      {% set args = [] %}
-      {% for port in (deploy_ports | default([])) %}
-      {% set _ = args.append('-p ' ~ port) %}
-      {% endfor %}
-      {{ args | join(' ') }}
-    deploy_env_args: >-
-      {% set args = [] %}
-      {% for item in (deploy_env | default({}) | dict2items) %}
-      {% set _ = args.append('-e ' ~ item.key ~ '=' ~ item.value) %}
-      {% endfor %}
-      {{ args | join(' ') }}
-    deploy_mounts_args: >-
-      {% set args = [] %}
-      {% for mount in (deploy_mounts | default([])) %}
-      {% set _ = args.append('-v ' ~ mount) %}
-      {% endfor %}
-      {{ args | join(' ') }}
-
-- name: Remove existing container (if any)
-  ansible.builtin.command: docker rm -f {{ deploy_container_name }}
-  register: docker_rm
-  failed_when: false
-  changed_when: docker_rm.rc == 0
-  when: docker_inspect.rc == 0
-
 - name: Run container
-  ansible.builtin.command: >-
-    docker run
-    {% if deploy_detach | bool %}-d{% endif %}
-    --restart {{ deploy_restart_policy }}
-    --name {{ deploy_container_name }}
-    {{ deploy_ports_args }}
-    {{ deploy_env_args }}
-    {{ deploy_mounts_args }}
-    {{ deploy_run_args }}
-    {{ deploy_image }}
-  register: docker_run
-  changed_when: true
+  community.docker.docker_container:
+    name: "{{ deploy_container_name }}"
+    image: "{{ deploy_image }}"
+    state: started
+    restart_policy: "{{ deploy_restart_policy }}"
+    recreate: true
+    detach: "{{ deploy_detach | bool }}"
+    published_ports: "{{ deploy_ports | default([]) }}"
+    env: "{{ deploy_env | default({}) }}"
+    volumes: "{{ deploy_mounts | default([]) }}"
+    networks: "{{ deploy_networks | default([]) }}"
