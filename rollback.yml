@@ -10,9 +10,9 @@
 
     - name: Set deploy image to previous
       ansible.builtin.set_fact:
-        deploy_image: "{{ previous_image_file.content | b64decode | trim }}"
+        docker_deploy_image: "{{ previous_image_file.content | b64decode | trim }}"
 
   roles:
     - role: docker_deploy
       vars:
-        deploy_track_releases: false
+        docker_deploy_track_releases: false

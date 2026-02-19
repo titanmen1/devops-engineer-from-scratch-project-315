@@ -1,8 +1,8 @@
 ---
-deploy_image: ghcr.io/titanmen1/project-devops-deploy:latest
-deploy_container_name: bulletins
+docker_deploy_image: ghcr.io/titanmen1/project-devops-deploy:latest
+docker_deploy_container_name: bulletins
 
-deploy_networks:
+docker_deploy_networks:
   - name: bulletins-net
 
 docker_edition: "ce"
@@ -18,21 +18,21 @@ postgres_db_name: bulletins
 postgres_user: "{{ vault_spring_datasource_username }}"
 postgres_password: "{{ vault_spring_datasource_password }}"
 
-deploy_host_dirs:
+docker_deploy_host_dirs:
   - /opt/bulletins/data/bulletin-images
   - /opt/bulletins/logs
 
-deploy_mounts:
+docker_deploy_mounts:
   - /opt/bulletins/data/bulletin-images:/tmp/bulletin-images
   - /opt/bulletins/logs:/var/log/bulletins
 
-deploy_ports:
+docker_deploy_ports:
   - "8080:8080"
   - "9090:9090"
 
-deploy_extract_static: true
-deploy_static_src_path: "/app/frontend-dist"
-deploy_static_dest: "/opt/bulletins/static"
+docker_deploy_extract_static: true
+docker_deploy_static_src_path: "/app/frontend-dist"
+docker_deploy_static_dest: "/opt/bulletins/static"
 
 nginx_server_name: "hexlet-third-project.crabdance.com"
 nginx_backend_port: 8080
@@ -58,7 +58,7 @@ nginx_ssl_certificate: "/etc/letsencrypt/live/{{ nginx_server_name }}/fullchain.
 nginx_ssl_certificate_key: "/etc/letsencrypt/live/{{ nginx_server_name }}/privkey.pem"
 nginx_acme_webroot: "{{ certbot_webroot }}"
 
-deploy_env:
+docker_deploy_env:
   SPRING_PROFILES_ACTIVE: "prod"
   SPRING_DATASOURCE_URL: "{{ vault_spring_datasource_url }}"
   SPRING_DATASOURCE_USERNAME: "{{ vault_spring_datasource_username }}"
@@ -70,6 +70,6 @@ deploy_env:
   STORAGE_S3_SECRETKEY: "{{ vault_storage_s3_secretkey }}"
   STORAGE_S3_CDNURL: "{{ vault_storage_s3_cdnurl }}"
 
-deploy_registry: ghcr.io
-deploy_registry_username: "{{ vault_ghcr_username }}"
-deploy_registry_password: "{{ vault_ghcr_token }}"
+docker_deploy_registry: ghcr.io
+docker_deploy_registry_username: "{{ vault_ghcr_username }}"
+docker_deploy_registry_password: "{{ vault_ghcr_token }}"

@@ -1,87 +1,87 @@
 ---
 - name: Docker login to registry
   community.docker.docker_login:
-    registry_url: "{{ deploy_registry }}"
-    username: "{{ deploy_registry_username }}"
-    password: "{{ deploy_registry_password }}"
+    registry_url: "{{ docker_deploy_registry }}"
+    username: "{{ docker_deploy_registry_username }}"
+    password: "{{ docker_deploy_registry_password }}"
   when:
-    - deploy_registry | length > 0
-    - deploy_registry_username | length > 0
-    - deploy_registry_password | length > 0
+    - docker_deploy_registry | length > 0
+    - docker_deploy_registry_username | length > 0
+    - docker_deploy_registry_password | length > 0
 
 - name: Create release directory
   ansible.builtin.file:
-    path: "{{ deploy_release_dir }}"
+    path: "{{ docker_deploy_release_dir }}"
     state: directory
     mode: "0755"
-  when: deploy_track_releases | bool
+  when: docker_deploy_track_releases | bool
 
 - name: Create host directories
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     mode: "0755"
-  loop: "{{ deploy_host_dirs | default([]) }}"
+  loop: "{{ docker_deploy_host_dirs | default([]) }}"
 
 - name: Pull docker image
   community.docker.docker_image:
-    name: "{{ deploy_image }}"
+    name: "{{ docker_deploy_image }}"
     source: pull
 
 - name: Ensure static destination directory exists
   ansible.builtin.file:
-    path: "{{ deploy_static_dest }}"
+    path: "{{ docker_deploy_static_dest }}"
     state: directory
     mode: "0755"
-  when: deploy_extract_static | bool
+  when: docker_deploy_extract_static | bool
 
 - name: Extract static assets from image
   community.docker.docker_container:
-    name: "{{ deploy_container_name }}_static"
-    image: "{{ deploy_image }}"
-    command: "sh -c 'cp -r {{ deploy_static_src_path }}/. /output'"
+    name: "{{ docker_deploy_container_name }}_static"
+    image: "{{ docker_deploy_image }}"
+    command: "sh -c 'cp -r {{ docker_deploy_static_src_path }}/. /output'"
     volumes:
-      - "{{ deploy_static_dest }}:/output"
+      - "{{ docker_deploy_static_dest }}:/output"
     auto_remove: true
     detach: false
     state: started
-  when: deploy_extract_static | bool
+  when: docker_deploy_extract_static | bool
 
 - name: Resolve pulled image info
   community.docker.docker_image_info:
-    name: "{{ deploy_image }}"
-  register: docker_image_info
+    name: "{{ docker_deploy_image }}"
+  register: docker_deploy_image_info
 
 - name: Check if container exists
   community.docker.docker_container_info:
-    name: "{{ deploy_container_name }}"
-  register: docker_container_info
+    name: "{{ docker_deploy_container_name }}"
+  register: docker_deploy_container_info
 
 - name: Save previous image id
   ansible.builtin.copy:
-    dest: "{{ deploy_release_dir }}/previous_image"
-    content: "{{ docker_container_info.container.Image }}\n"
+    dest: "{{ docker_deploy_release_dir }}/previous_image"
+    content: "{{ docker_deploy_container_info.container.Image }}\n"
     mode: "0644"
   when:
-    - deploy_track_releases | bool
-    - docker_container_info.exists
+    - docker_deploy_track_releases | bool
+    - docker_deploy_container_info.exists
 
 - name: Save current image id
   ansible.builtin.copy:
-    dest: "{{ deploy_release_dir }}/current_image"
-    content: "{{ docker_image_info.images[0].Id }}\n"
+    dest: "{{ docker_deploy_release_dir }}/current_image"
+    content: "{{ docker_deploy_image_info.images[0].Id }}\n"
     mode: "0644"
-  when: deploy_track_releases | bool
+  when: docker_deploy_track_releases | bool
 
 - name: Run container
   community.docker.docker_container:
-    name: "{{ deploy_container_name }}"
-    image: "{{ deploy_image }}"
+    name: "{{ docker_deploy_container_name }}"
+    image: "{{ docker_deploy_image }}"
     state: started
-    restart_policy: "{{ deploy_restart_policy }}"
+    restart_policy: "{{ docker_deploy_restart_policy }}"
     recreate: true
-    detach: "{{ deploy_detach | bool }}"
-    published_ports: "{{ deploy_ports | default([]) }}"
-    env: "{{ deploy_env | default({}) }}"
-    volumes: "{{ deploy_mounts | default([]) }}"
-    networks: "{{ deploy_networks | default([]) }}"
+    detach: "{{ docker_deploy_detach | bool }}"
+    published_ports: "{{ docker_deploy_ports | default([]) }}"
+    env: "{{ docker_deploy_env | default({}) }}"
+    volumes: "{{ docker_deploy_mounts | default([]) }}"
+    networks: "{{ docker_deploy_networks | default([]) }}"

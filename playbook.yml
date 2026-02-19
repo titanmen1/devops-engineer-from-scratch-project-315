@@ -1,7 +1,6 @@
-- hosts: webservers
+- name: Deploy application stack
+  hosts: webservers
   become: true
-  collections:
-    - community.docker
 
   tasks:
     - name: Подготовка сервера (Docker)
