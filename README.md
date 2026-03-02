@@ -99,6 +99,37 @@ All other variables supported by Spring Boot can be overridden the same way; che
 
 See [Makefile](./Makefile)
 
+### Ansible/Deployment Setup
+
+Before running deployment commands, you need to set up the environment:
+
+1. **Create vault password file**:
+   Create a file named `.vault_pass` in the project root and put your Ansible vault password in it:
+   ```bash
+   echo "your-vault-password" > .vault_pass
+   chmod 600 .vault_pass
+   ```
+
+2. **Install dependencies**:
+   Run the setup command to install required Ansible roles and collections:
+   ```bash
+   make setup
+   ```
+
+   This command will:
+   - Install Ansible roles from `requirements.yml` (geerlingguy.docker, geerlingguy.certbot)
+   - Install Ansible collections (community.docker)
+
+3. **Deploy the application**:
+   ```bash
+   make deploy
+   ```
+
+4. **Rollback if needed**:
+   ```bash
+   make rollback
+   ```
+
 ## Frontend
 
 ### Development

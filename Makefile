@@ -6,6 +6,8 @@ PLATFORMS ?= linux/amd64
 ansible-install:
 	ansible-galaxy install -r requirements.yml
 
+setup: ansible-install
+
 deploy:
 	ansible-playbook playbook.yml --vault-password-file .vault_pass -v
 
